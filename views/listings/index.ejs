@@ -1,0 +1,164 @@
+<% layout("/layouts/boilerplate") %>
+
+<style>
+  #filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 1rem 0;
+  }
+
+  .filter {
+    text-align: center;
+    margin-right: 2rem;
+    margin-top: 1rem;
+    opacity: 0.7;
+    transition: 0.2s;
+  }
+
+  .filter:hover {
+    opacity: 1;
+    cursor: pointer;
+    border-bottom: 2px solid #fe424d;
+  }
+
+  .filter p {
+    font-size: 0.8rem;
+  }
+
+  .tax-info {
+    display: none;
+    color: #830d15;
+    font-weight: 600;
+  }
+
+  .tax-toggle {
+    border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 1rem;
+    height: 3.5rem;
+    padding: 1rem;
+    margin-left: auto; /* Pushes toggle to the far right */
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .listing-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Smooth scaling for the scroll-to-search effect */
+  .search-highlight {
+    border: 2px solid #fe424d !important;
+    box-shadow: 0 0 15px rgba(254, 66, 77, 0.5);
+  }
+</style>
+
+<div id="filters">
+  <div class="filter">
+    <div><i class="fa-solid fa-fire"></i></div>
+    <p>Trending</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-solid fa-bed"></i></div>
+    <p>Rooms</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-solid fa-mountain-city"></i></div>
+    <p>Iconic cities</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-solid fa-mountain"></i></div>
+    <p>Mountains</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-brands fa-fort-awesome"></i></div>
+    <p>Castles</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-solid fa-person-swimming"></i></div>
+    <p>Amazing pools</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-solid fa-tent"></i></div>
+    <p>Camping</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-solid fa-building-wheat"></i></div>
+    <p>Farms</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-solid fa-landmark-dome"></i></div>
+    <p>Domes</p>
+  </div>
+  <div class="filter">
+    <div><i class="fa-solid fa-sailboat"></i></div>
+    <p>Boats</p>
+  </div>
+
+  <div class="tax-toggle">
+    <div class="form-check-reverse form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="switchCheckDefault" style="cursor: pointer;">
+      <label class="form-check-label" for="switchCheckDefault" style="cursor: pointer;">Display total after taxes</label>
+    </div>
+  </div>
+</div>
+
+<div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 mt-4">
+  <% for(let listing of allListings) { %>
+  <a href="/listings/<%= listing._id %>" class="listing-link">
+    <div class="card col listing-card" data-title="<%= listing.title.toLowerCase() %>">
+      <img src="<%= listing.image.url %>" class="card-img-top" alt="listing_image" style="height: 20rem" />
+      <div class="card-img-overlay"></div>
+      <div class="card-body">
+        <p class="card-text">
+          <b><%= listing.title %></b> <br />
+          &#8377; <%= listing.price.toLocaleString("en-IN") %> / night
+          <i class="tax-info"> &nbsp;&nbsp;+19% GST</i>
+        </p>
+      </div>
+    </div>
+  </a>
+  <% } %>
+</div>
+
+<script>
+  // 1. Tax Toggle Logic
+  let taxSwitch = document.getElementById("switchCheckDefault");
+  taxSwitch.addEventListener("click", () => {
+    let taxInfo = document.getElementsByClassName("tax-info");
+    for (let info of taxInfo) {
+      if (taxSwitch.checked) {
+        info.style.display = "inline";
+      } else {
+        info.style.display = "none";
+      }
+    }
+  });
+
+  // 2. Smooth Scroll to Search Result Logic
+  window.addEventListener('load', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchQuery = urlParams.get('q');
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const cards = document.querySelectorAll('.listing-card');
+      
+      for (let card of cards) {
+        if (card.getAttribute('data-title').includes(query)) {
+          // Scroll smoothly to the found card
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Add a temporary highlight
+          card.classList.add('search-highlight');
+          setTimeout(() => {
+            card.classList.remove('search-highlight');
+          }, 2000);
+          break;
+        }
+      }
+    }
+  });
+</script>

@@ -1,0 +1,97 @@
+<style>
+  .btn-search {
+    background-color: #fe424d;
+    color: #fff;
+    border-radius: 25px;
+    padding: 0 1rem;
+  }
+
+  .btn-search:hover {
+    background-color: #fe424d;
+    color: #fff;
+    opacity: 0.9;
+  }
+
+  .search-inp {
+    border-radius: 25px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    width: 250px !important;
+  }
+
+  /* Suggestion Box Styling */
+  #suggestions-box {
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    display: none;
+    z-index: 1050;
+  }
+
+  #suggestions-box .list-group-item {
+    border: none;
+    cursor: pointer;
+  }
+
+  #suggestions-box .list-group-item:hover {
+    background-color: #f8f9fa;
+    color: #fe424d;
+  }
+</style>
+
+<nav class="navbar navbar-expand-md bg-body-tertiary border-bottom sticky-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/listings"><i class="fa-solid fa-compass"></i></a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-link" href="/listings">Explore</a>
+      </div>
+
+      <div class="navbar-nav ms-auto">
+        <form class="d-flex" role="search" action="/listings" method="GET" style="position: relative;">
+          <input 
+            class="form-control me-2 search-inp" 
+            type="search" 
+            placeholder="Search destinations" 
+            name="q" 
+            id="search-input" 
+            autocomplete="off"
+          />
+          <button class="btn btn-search" type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i> Search
+          </button>
+
+          <div id="suggestions-box" class="list-group position-absolute shadow"></div>
+        </form>
+      </div>
+
+      <div class="navbar-nav ms-auto align-items-center">
+        <div class="form-check form-switch me-3 mt-1">
+          <input class="form-check-input" type="checkbox" id="darkModeToggle" style="cursor: pointer;">
+          <label class="form-check-label" for="darkModeToggle">
+            <i class="fa-solid fa-moon"></i>
+          </label>
+        </div>
+        
+        <a class="nav-link" href="/listings/new">Airbnb your home</a>
+
+        <% if(!currUser) { %>
+          <a class="nav-link" href="/signup"><b>Signup</b></a>
+          <a class="nav-link" href="/login">Log in</a>
+        <% } %>
+
+        <% if(currUser) { %>
+          <a class="nav-link" href="/logout">Log out</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</nav>
