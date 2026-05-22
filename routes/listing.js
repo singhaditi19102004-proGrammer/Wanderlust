@@ -7,6 +7,7 @@ const multer = require('multer');
 const { storage } = require("../cloudConfig.js");
 const upload = multer({ storage });
 const axios = require("axios");
+const geoKey = process.env.GEO_API_KEY;
 
 // --- INDEX & CREATE ---
 router.route("/")

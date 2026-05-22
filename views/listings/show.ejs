@@ -77,14 +77,8 @@
 </div>
 
 <script>
-    const map = L.map('map').setView([<%= listing.geometry.coordinates[1] %>, <%= listing.geometry.coordinates[0] %>], 13);
-
-    L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
-
-    L.marker([<%= listing.geometry.coordinates[1] %>, <%= listing.geometry.coordinates[0] %>])
-        .addTo(map)
-        .bindPopup("<h3><%= listing.location %></h3>")
-        .openPopup();
+  r
+  const mapToken = "<%= process.env.GEO_API_KEY %>";
+  const listing = <%- JSON.stringify(listing) %>;
 </script>
+<script src="/js/map.js"></script>

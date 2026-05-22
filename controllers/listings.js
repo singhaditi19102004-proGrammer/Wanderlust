@@ -1,5 +1,6 @@
 const Listing = require("../models/listing");
 const axios = require("axios");
+const geoKey = process.env.GEO_API_KEY;
 
 // 1. Index Route
 // controllers/listings.js
