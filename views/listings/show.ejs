@@ -77,8 +77,8 @@
 </div>
 
 <script>
-  r
-  const mapToken = "<%= process.env.GEO_API_KEY %>";
+  // Read the token variable sent down directly by your showListing controller
+  const mapToken = "<%= geoKey %>";
   const listing = <%- JSON.stringify(listing) %>;
 </script>
 <script src="/js/map.js"></script>
