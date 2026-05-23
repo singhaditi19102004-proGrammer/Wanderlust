@@ -199,15 +199,15 @@ module.exports.updateListing = async (req, res, next) => {
             simulatedCoords = [86.2029, 22.8046];
         }
 
-        // Apply fundamental text updates
-        let listing = await Listing.findByIdAndUpdate(id, { ...listingData }, { runValidators: true });
+        // MASTER FIXED PIPELINE: Added { new: true } option flag down below so the updated instance context is captured directly
+        let listing = await Listing.findByIdAndUpdate(id, { ...listingData }, { runValidators: true, new: true });
 
         // Normalizes flat form image text strings into required schema object structure
         if (req.body.image && typeof req.body.image === "string") {
             listing.image = { url: req.body.image, filename: "updated_url" };
         } else if (listingData.image && typeof listingData.image === "string") {
             listing.image = { url: listingData.image, filename: "updated_url" };
-        } else {
+        } else if (!listing.image || !listing.image.url) {
             listing.image = { 
                 url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
                 filename: "production_default" 
