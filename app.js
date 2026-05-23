@@ -8,19 +8,18 @@ const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-// Models & Routes Resources (Fixed paths to be strictly lowercase for Linux/Render compatibility)
-const User = require("./models/user.js");
-const Listing = require("./models/listing.js"); 
-const listingRouter = require("./routes/listing.js");
-const reviewRouter = require("./routes/review.js");
-const userRouter = require("./routes/user.js");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
 
-// Models & Routes Resources
-const User = require("./models/user.js");
-const Listing = require("./models/listing.js");
-const listingRouter = require("./routes/listing.js");
-const reviewRouter = require("./routes/review.js");
-const userRouter = require("./routes/user.js");
+// Models & Absolute Path Synced Routes Resources
+const User = require(path.join(__dirname, "models", "user.js"));
+const Listing = require(path.join(__dirname, "models", "listing.js"));
+const listingRouter = require(path.join(__dirname, "routes", "listing.js"));
+const reviewRouter = require(path.join(__dirname, "routes", "review.js"));
+const userRouter = require(path.join(__dirname, "routes", "user.js"));
 
 // Database URLs Configuration
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
@@ -41,13 +40,13 @@ app.set("views", path.join(__dirname, "views"));
 // Parser Middleware Setup 
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
-app.use(express.static(path.join(__dirname, "/public")));
+app.use(express.static(path.join(__dirname, "public")));
 
 // MongoDB Persistent Session Store Configuration
 const store = MongoStore.create({
     mongoUrl: dbUrl,
     crypto: { secret: process.env.SECRET || "presentation_backup_token" },
-    touchAfter: 24 * 3600 // 24-hour lazy update interval window
+    touchAfter: 24 * 3600 
 });
 store.on("error", (err) => console.log("Session Cluster Storage Error:", err));
 
@@ -57,7 +56,7 @@ const sessionOptions = {
     resave: false,
     saveUninitialized: true,
     cookie: {
-        expires: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 Days lifespan window
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000, 
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true
     }
@@ -89,7 +88,6 @@ app.use("/", userRouter);
 
 // ==========================================================================
 // 🗺️ EMERGENCY REPAIR HOOK FOR MAP COORDINATES (OWNERSHIP UNTOUCHED)
-// Run this route in your live browser tab to fix your map coordinates instantly!
 // ==========================================================================
 const axios = require("axios");
 app.get("/run-global-map-repair", async (req, res) => {
@@ -117,13 +115,12 @@ app.get("/run-global-map-repair", async (req, res) => {
                         $set: {
                             "geometry": {
                                 type: "Point",
-                                coordinates: [geo.longitude, geo.latitude] // Longitude first for valid GeoJSON standard rule structures
+                                coordinates: [geo.longitude, geo.latitude] 
                             }
                         }
                     });
                     fixCount++;
                 }
-                // Safe free-tier API rate tracking pacing window spacer
                 await new Promise(resolve => setTimeout(resolve, 350));
             } catch (inner) {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
