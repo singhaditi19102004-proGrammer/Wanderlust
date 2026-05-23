@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 });
 
 // ==========================================================================
-// 🛡️ INLINE LISTING SCHEMA (Bypasses all cross-file path errors)
+// 🛡️ INLINE LISTING SCHEMA
 // ==========================================================================
 const Schema = mongoose.Schema;
 const listingSchema = new Schema({
@@ -65,13 +65,13 @@ const Listing = mongoose.models.Listing || mongoose.model("Listing", listingSche
 // 🚀 CLEAN RENDER ROUTES FOR MAP VIEWING
 // ==========================================================================
 
-// Homepage Index Route - Shows all listings
+// Homepage Index Route
 app.get("/listings", async (req, res) => {
     const allListings = await Listing.find({});
     res.render("listings/index.ejs", { allListings });
 });
 
-// Show Route - Essential for Mapbox rendering
+// Show Route
 app.get("/listings/:id", async (req, res) => {
     const { id } = req.params;
     const listing = await Listing.findById(id);
@@ -114,7 +114,7 @@ app.get("/run-global-map-repair", async (req, res) => {
                     });
                     fixCount++;
                 }
-                await new Promise(resolve => setTimeout(resolve, 300)); // Safety rate limiting delay
+                await new Promise(resolve => setTimeout(resolve, 300));
             } catch (inner) {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
             }
@@ -126,14 +126,10 @@ app.get("/run-global-map-repair", async (req, res) => {
 });
 
 // ==========================================================================
-// 🚨 EXPRESS 5 CERTIFIED CATCH-ALL ERROR ROUTE
+// 🛡️ ZERO-ROUTER FALLBACK CATCH (Bypasses path-to-regexp string compilation)
 // ==========================================================================
-app.all("/:slug*", (req, res) => {
+app.use((req, res) => {
     res.status(404).send("Page Not Found");
-});
-
-app.use((err, req, res, next) => {
-    res.status(500).send("Something went wrong with the server engine layout.");
 });
 
 const PORT = process.env.PORT || 8080;
