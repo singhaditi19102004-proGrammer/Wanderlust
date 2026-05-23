@@ -29,17 +29,17 @@ module.exports.isOwner = async (req, res, next) => {
     next();
 };
 
-// --- FIX: FIXED VALIDATION HANDLER ENGINE ---
+// --- AUTOMATED DATA NORMALIZATION ENGINE ---
 module.exports.validateListing = (req, res, next) => {
-    // Dynamically restructures flat form parameters into the nested 'listing' object Joi expects
+    // Ensures that incoming flat form properties are safely mapped into a standard object structure
     if (req.body && !req.body.listing) {
         req.body.listing = {
-            title: req.body.title || req.body.listing?.title,
-            description: req.body.description || req.body.listing?.description,
-            price: req.body.price || req.body.listing?.price,
-            location: req.body.location || req.body.listing?.location,
-            country: req.body.country || req.body.listing?.country,
-            category: req.body.category || req.body.listing?.category
+            title: req.body.title,
+            description: req.body.description,
+            price: req.body.price,
+            location: req.body.location,
+            country: req.body.country,
+            category: req.body.category
         };
     }
 
