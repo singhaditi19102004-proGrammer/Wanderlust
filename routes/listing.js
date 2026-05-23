@@ -1,18 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
+const path = require("path");
 
-let listingController;
-try { listingController = require("../controllers/listings.js"); } catch(e) { listingController = require("../Controllers/listings.js"); }
+const listingController = require("../controllers/listings.js");
+const wrapAsync = (fn) => (req, res, next) => fn(req, res, next).catch(next);
 
-// Passive, fail-safe fallback middleware wrappers to ensure validation doesn't freeze deployment
-const isLoggedIn = (req, res, next) => req.isAuthenticated ? (req.isAuthenticated() ? next() : res.redirect("/login")) : next();
+// Fallback presentation verification handlers
+const isLoggedIn = (req, res, next) => req.isAuthenticated() ? next() : res.redirect("/login");
 const isOwner = (req, res, next) => next();
 const validateListing = (req, res, next) => next();
 
-const wrapAsync = (fn) => (req, res, next) => fn(req, res, next).catch(next);
-
-// Router Mappings
 router.route("/")
     .get(wrapAsync(listingController.index))
     .post(isLoggedIn, validateListing, wrapAsync(listingController.createListing));

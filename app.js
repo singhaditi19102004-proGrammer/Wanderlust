@@ -9,7 +9,7 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
-const MongoStore = require("connect-mongo"); // Pure modern import string
+const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -35,42 +35,14 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================================================
-// 🛡️ DYNAMIC FUTURE-PROOF COMPATIBILITY CORES FOR MONGOSTORE
+// 🛡️ ACCURATE MONGOSTORE INSTANTIATION
 // ==========================================================================
-let productionSessionStore;
-
-try {
-    // Strategy A: Try the standard constructor format
-    productionSessionStore = new MongoStore({
+const sessionOptions = {
+    store: MongoStore.create({
         mongoUrl: dbUrl,
         crypto: { secret: process.env.SECRET || "presentation_backup_token" },
-        touchAfter: 24 * 3600
-    });
-} catch (e) {
-    try {
-        // Strategy B: Fallback to static factory configuration methods
-        productionSessionStore = MongoStore.create({
-            mongoUrl: dbUrl,
-            crypto: { secret: process.env.SECRET || "presentation_backup_token" },
-            touchAfter: 24 * 3600
-        });
-    } catch (err) {
-        // Strategy C: Final fallback support structure for older legacy wrapper formats
-        try {
-            const LegacyStore = require("connect-mongo")(session);
-            productionSessionStore = new LegacyStore({
-                url: dbUrl,
-                secret: process.env.SECRET || "presentation_backup_token",
-                touchAfter: 24 * 3600
-            });
-        } catch (criticalError) {
-            console.log("Session store initialization bypass engine triggered.");
-        }
-    }
-}
-
-const sessionOptions = {
-    store: productionSessionStore,
+        touchAfter: 24 * 3600 
+    }),
     secret: process.env.SECRET || "presentation_backup_token",
     resave: false,
     saveUninitialized: true,
@@ -85,39 +57,10 @@ app.use(session(sessionOptions));
 app.use(flash());
 
 // ==========================================================================
-// 🛡️ EMERGENCY INLINE MODEL SCHEMAS (Bypasses external folder file locks)
+// 🛡️ MODULE LOADING WITH EXPLICIT PATH RESOLUTION
 // ==========================================================================
-const Schema = mongoose.Schema;
-
-const userSchema = new Schema({
-    email: { type: String, required: true }
-});
-try {
-    const passportLocalMongoose = require("passport-local-mongoose");
-    userSchema.plugin(passportLocalMongoose);
-} catch (e) {
-    console.log("Passport plugin attachment handled inline.");
-}
-let User = mongoose.models.User || mongoose.model("User", userSchema);
-
-const listingSchema = new Schema({
-    title: { type: String, required: true },
-    description: String,
-    image: {
-        filename: String,
-        url: String
-    },
-    price: Number,
-    location: String,
-    country: String,
-    reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
-    owner: { type: Schema.Types.ObjectId, ref: "User" },
-    geometry: {
-        type: { type: String, enum: ["Point"], required: true },
-        coordinates: { type: [Number], required: true }
-    }
-});
-let Listing = mongoose.models.Listing || mongoose.model("Listing", listingSchema);
+const User = require("./models/user.js");
+const Listing = require("./models/listing.js");
 
 // Authentication Middleware Configuration 
 app.use(passport.initialize());
@@ -135,12 +78,11 @@ app.use((req, res, next) => {
 });
 
 // ==========================================================================
-// 🚀 DYNAMIC ROUTE IMPORTS (Wrapped in safe fallbacks)
+// 🚀 DYNAMIC ROUTE LOADING
 // ==========================================================================
-let listingRouter, reviewRouter, userRouter;
-try { listingRouter = require("./routes/listing.js"); } catch(e) { listingRouter = require("./routes/Listing.js"); }
-try { reviewRouter = require("./routes/review.js"); } catch(e) { reviewRouter = require("./routes/Review.js"); }
-try { userRouter = require("./routes/user.js"); } catch(e) { userRouter = require("./routes/User.js"); }
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
 
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
@@ -149,7 +91,7 @@ app.use("/", userRouter);
 app.get("/", (req, res) => res.redirect("/listings"));
 
 // ==========================================================================
-// 🗺️ EMERGENCY REPAIR HOOK FOR MAP COORDINATES (OWNERSHIP UNTOUCHED)
+// 🗺️ EMERGENCY REPAIR HOOK FOR MAP COORDINATES
 // ==========================================================================
 const axios = require("axios");
 app.get("/run-global-map-repair", async (req, res) => {
@@ -162,7 +104,6 @@ app.get("/run-global-map-repair", async (req, res) => {
         }
 
         let fixCount = 0;
-
         for (let listing of listings) {
             try {
                 const query = `${listing.location}, ${listing.country}`;
@@ -172,7 +113,6 @@ app.get("/run-global-map-repair", async (req, res) => {
                 
                 if (apiResponse.data && apiResponse.data.data && apiResponse.data.data[0]) {
                     const geo = apiResponse.data.data[0];
-                    
                     await Listing.findByIdAndUpdate(listing._id, {
                         $set: {
                             "geometry": {
@@ -188,8 +128,7 @@ app.get("/run-global-map-repair", async (req, res) => {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
             }
         }
-
-        res.send(`✨ SUCCESS! Cloud script ran smoothly. Evaluated and repaired coordinates for ${fixCount} listings in Atlas without changing ownership configurations!`);
+        res.send(`✨ SUCCESS! Cloud script ran smoothly. Repaired coordinates for ${fixCount} listings!`);
     } catch (err) {
         res.send("❌ Critical route execution failure: " + err.message);
     }
@@ -208,8 +147,5 @@ app.use((err, req, res, next) => {
     }
 });
 
-// Initialize Framework Web Server Core Socket Listener
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-    console.log(`📡 Server active on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`📡 Server active on port ${PORT}`));

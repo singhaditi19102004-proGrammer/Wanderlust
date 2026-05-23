@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const passportLocalMongoose = require("passport-local-mongoose").default || require("passport-local-mongoose");
+const passportLocalMongoose = require("passport-local-mongoose");
+
 const userSchema = new Schema({
     email: {
         type: String,
@@ -8,7 +9,6 @@ const userSchema = new Schema({
     }
 });
 
-// The plugin adds username, hash, and salt fields automatically
-userSchema.plugin(passportLocalMongoose); 
+userSchema.plugin(passportLocalMongoose);
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.models.User || mongoose.model("User", userSchema);
