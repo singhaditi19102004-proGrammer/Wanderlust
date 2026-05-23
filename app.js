@@ -14,18 +14,6 @@ const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 
-// ==========================================================================
-// 🛡️ CASE-INSENSITIVE SAFE MODULE IMPORTS (Bypasses Git Casing Bugs)
-// ==========================================================================
-let User, Listing, listingRouter, reviewRouter, userRouter;
-
-try { User = require("./models/user.js"); } catch(e) { User = require("./models/User.js"); }
-try { Listing = require("./models/listing.js"); } catch(e) { Listing = require("./models/Listing.js"); }
-try { listingRouter = require("./routes/listing.js"); } catch(e) { listingRouter = require("./routes/Listing.js"); }
-try { reviewRouter = require("./routes/review.js"); } catch(e) { reviewRouter = require("./routes/Review.js"); }
-try { userRouter = require("./routes/user.js"); } catch(e) { userRouter = require("./routes/User.js"); }
-
-// Database URLs Configuration
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
 // Establish Database Connection Engine
@@ -52,7 +40,6 @@ const store = MongoStore.create({
     crypto: { secret: process.env.SECRET || "presentation_backup_token" },
     touchAfter: 24 * 3600 
 });
-store.on("error", (err) => console.log("Session Cluster Storage Error:", err));
 
 const sessionOptions = {
     store,
@@ -69,6 +56,36 @@ const sessionOptions = {
 app.use(session(sessionOptions));
 app.use(flash());
 
+// ==========================================================================
+// 🛡️ EMERGENCY INLINE MODEL SCHEMAS (Bypasses external folder file locks)
+// ==========================================================================
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema({
+    email: { type: String, required: true }
+});
+userSchema.plugin(passport-local-mongoose || require("passport-local-mongoose"));
+let User = mongoose.models.User || mongoose.model("User", userSchema);
+
+const listingSchema = new Schema({
+    title: { type: String, required: true },
+    description: String,
+    image: {
+        filename: String,
+        url: String
+    },
+    price: Number,
+    location: String,
+    country: String,
+    reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
+    owner: { type: Schema.Types.ObjectId, ref: "User" },
+    geometry: {
+        type: { type: String, enum: ["Point"], required: true },
+        coordinates: { type: [Number], required: true }
+    }
+});
+let Listing = mongoose.models.Listing || mongoose.model("Listing", listingSchema);
+
 // Authentication Middleware Configuration 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -84,11 +101,19 @@ app.use((req, res, next) => {
     next();
 });
 
-// Master Layout Routing Redirections
-app.get("/", (req, res) => res.redirect("/listings"));
+// ==========================================================================
+// 🚀 DYNAMIC ROUTE IMPORTS (Wrapped in safe failbacks)
+// ==========================================================================
+let listingRouter, reviewRouter, userRouter;
+try { listingRouter = require("./routes/listing.js"); } catch(e) { listingRouter = require("./routes/Listing.js"); }
+try { reviewRouter = require("./routes/review.js"); } catch(e) { reviewRouter = require("./routes/Review.js"); }
+try { userRouter = require("./routes/user.js"); } catch(e) { userRouter = require("./routes/User.js"); }
+
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/", userRouter);
+
+app.get("/", (req, res) => res.redirect("/listings"));
 
 // ==========================================================================
 // 🗺️ EMERGENCY REPAIR HOOK FOR MAP COORDINATES (OWNERSHIP UNTOUCHED)
@@ -100,7 +125,7 @@ app.get("/run-global-map-repair", async (req, res) => {
         const apiKey = process.env.GEO_API_KEY; 
 
         if (!apiKey) {
-            return res.send("❌ Error: GEO_API_KEY is missing from Render environment variables configuration properties layout!");
+            return res.send("❌ Error: GEO_API_KEY is missing from Render environment variables!");
         }
 
         let fixCount = 0;
@@ -145,11 +170,13 @@ app.all("*", (req, res, next) => {
 // Final Express System Error Handler Hook Pipeline Middleware
 app.use((err, req, res, next) => {
     let { statusCode = 500, message = "Something went wrong!" } = err;
-    res.status(statusCode).render("error.ejs", { message });
+    if (!res.headersSent) {
+        res.status(statusCode).render("error.ejs", { message });
+    }
 });
 
 // Initialize Framework Web Server Core Socket Listener
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-    console.log(`📡 Server active, listening onto socket routing endpoints on port ${PORT}`);
+    console.log(`📡 Server active on port ${PORT}`);
 });
