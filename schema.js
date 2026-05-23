@@ -7,10 +7,10 @@ module.exports.listingSchema = Joi.object({
         location: Joi.string().required(),
         country: Joi.string().required(),
         price: Joi.number().required().min(0),
-        image: Joi.string().allow("", null),
+        image: Joi.string().allow("", null), // Bypasses the strict object crash completely
         category: Joi.string().allow("", null)
     }).required()
-}).unknown(true);
+}).unknown(true); // Allows flexible parameters to pass without crashing
 
 module.exports.reviewSchema = Joi.object({
     review: Joi.object({

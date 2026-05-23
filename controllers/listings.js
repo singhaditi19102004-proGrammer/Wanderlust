@@ -60,15 +60,19 @@ module.exports.createListing = async (req, res, next) => {
         const newListing = new Listing(listingData);
         newListing.owner = req.user._id;
 
-        // Permanent safe placeholder image to prevent cloud signature failures
-        newListing.image = { 
-            url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
-            filename: "production_default" 
-        };
+        // Normalize text image link inputs safely into the required object layout shape
+        if (listingData.image && listingData.image.trim() !== "") {
+            newListing.image = { url: listingData.image, filename: "user_upload" };
+        } else {
+            newListing.image = { 
+                url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
+                filename: "production_default" 
+            };
+        }
 
-        // Complete Map Simulator Engine
+        // Global Map Coordinates Simulator
         const loc = (listingData.location || "").toLowerCase().trim();
-        let simulatedCoords = [77.2090, 28.6130]; // Delhi
+        let simulatedCoords = [77.2090, 28.6130]; 
 
         if (loc.includes("new york") || loc.includes("nyc") || loc.includes("united states")) simulatedCoords = [-74.0060, 40.7128];
         else if (loc.includes("mumbai") || loc.includes("bombay")) simulatedCoords = [72.8777, 19.0760];
@@ -105,15 +109,15 @@ module.exports.renderEditForm = async (req, res) => {
     res.render("listings/edit.ejs", { listing, originalImageUrl });
 };
 
-// 6. Update Listing Route (100% Error-Free Text & Map Sync)
+// 6. Update Listing Route
 module.exports.updateListing = async (req, res, next) => {
     try {
         let { id } = req.params;
         const listingData = req.body.listing;
 
-        // Complete Map Simulator Engine
+        // Global Map Coordinates Simulator
         const loc = (listingData.location || "").toLowerCase().trim();
-        let simulatedCoords = [77.2090, 28.6130]; // Delhi Default
+        let simulatedCoords = [77.2090, 28.6130]; 
 
         if (loc.includes("new york") || loc.includes("nyc") || loc.includes("united states")) simulatedCoords = [-74.0060, 40.7128];
         else if (loc.includes("mumbai") || loc.includes("bombay")) simulatedCoords = [72.8777, 19.0760];
@@ -128,18 +132,19 @@ module.exports.updateListing = async (req, res, next) => {
         else if (loc.includes("tokyo") || loc.includes("japan")) simulatedCoords = [139.6917, 35.6895];
         else if (loc.includes("sydney") || loc.includes("australia")) simulatedCoords = [151.2093, -33.8688];
 
-        // 1. Update text content
+        // Process textural modifications and grab fresh validation frame context
         let listing = await Listing.findByIdAndUpdate(id, { ...listingData }, { runValidators: true, new: true });
 
-        // 2. Safely preserve image structure without letting forms break it
-        if (!listing.image || !listing.image.url) {
+        // Force string image paths cleanly inside the schema object tracking variables
+        if (listingData.image && listingData.image.trim() !== "") {
+            listing.image = { url: listingData.image, filename: "user_update" };
+        } else if (!listing.image || !listing.image.url) {
             listing.image = { 
                 url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
                 filename: "production_default" 
             };
         }
 
-        // 3. Inject correct simulated map coordinates
         listing.geometry = { type: "Point", coordinates: simulatedCoords };
 
         await listing.save();
