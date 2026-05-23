@@ -14,12 +14,16 @@ const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 
-// Models & Absolute Path Synced Routes Resources
-const User = require(path.join(__dirname, "models", "user.js"));
-const Listing = require(path.join(__dirname, "models", "listing.js"));
-const listingRouter = require(path.join(__dirname, "routes", "listing.js"));
-const reviewRouter = require(path.join(__dirname, "routes", "review.js"));
-const userRouter = require(path.join(__dirname, "routes", "user.js"));
+// ==========================================================================
+// 🛡️ CASE-INSENSITIVE SAFE MODULE IMPORTS (Bypasses Git Casing Bugs)
+// ==========================================================================
+let User, Listing, listingRouter, reviewRouter, userRouter;
+
+try { User = require("./models/user.js"); } catch(e) { User = require("./models/User.js"); }
+try { Listing = require("./models/listing.js"); } catch(e) { Listing = require("./models/Listing.js"); }
+try { listingRouter = require("./routes/listing.js"); } catch(e) { listingRouter = require("./routes/Listing.js"); }
+try { reviewRouter = require("./routes/review.js"); } catch(e) { reviewRouter = require("./routes/Review.js"); }
+try { userRouter = require("./routes/user.js"); } catch(e) { userRouter = require("./routes/User.js"); }
 
 // Database URLs Configuration
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
