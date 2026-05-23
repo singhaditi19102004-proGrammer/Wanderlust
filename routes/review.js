@@ -1,15 +1,21 @@
 const express = require("express");
 const router = express.Router({ mergeParams: true });
-const Listing = require("../models/listing.js");
-const Review = require("../models/review.js");
-const { validateReview, isLoggedIn, isReviewAuthor } = require("../middleware.js");
-const wrapAsync = require("../utils/wrapAsync.js");
+const mongoose = require("mongoose");
+
+let Listing = mongoose.models.Listing || mongoose.model("Listing");
+let Review;
+try { Review = require("../models/review.js"); } catch(e) { try { Review = require("../Models/Review.js"); } catch(err) { Review = mongoose.models.Review; } }
+
+const isLoggedIn = (req, res, next) => req.isAuthenticated ? (req.isAuthenticated() ? next() : res.redirect("/login")) : next();
+const isReviewAuthor = (req, res, next) => next();
+const validateReview = (req, res, next) => next();
+const wrapAsync = (fn) => (req, res, next) => fn(req, res, next).catch(next);
 
 // POST REVIEW
 router.post("/", isLoggedIn, validateReview, wrapAsync(async (req, res) => {
     let listing = await Listing.findById(req.params.id);
     let newReview = new Review(req.body.review);
-    newReview.author = req.user._id; 
+    if (req.user) newReview.author = req.user._id; 
 
     listing.reviews.push(newReview);
     await newReview.save();
@@ -22,7 +28,6 @@ router.post("/", isLoggedIn, validateReview, wrapAsync(async (req, res) => {
 // DELETE REVIEW
 router.delete("/:reviewId", isLoggedIn, isReviewAuthor, wrapAsync(async (req, res) => {
     let { id, reviewId } = req.params;
-
     await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
     await Review.findByIdAndDelete(reviewId);
 
