@@ -8,11 +8,12 @@ const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-const session = require("express-session");
-const MongoStore = require("connect-mongo");
-const flash = require("connect-flash");
-const passport = require("passport");
-const LocalStrategy = require("passport-local");
+// Models & Routes Resources (Fixed paths to be strictly lowercase for Linux/Render compatibility)
+const User = require("./models/user.js");
+const Listing = require("./models/listing.js"); 
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
 
 // Models & Routes Resources
 const User = require("./models/user.js");
