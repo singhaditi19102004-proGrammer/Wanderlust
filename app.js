@@ -9,7 +9,7 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const MongoStore = require("connect-mongo"); 
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -35,10 +35,10 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================================================
-// 🛡️ ACCURATE MONGOSTORE INSTANTIATION
+// 🛡️ UNIVERSAL MONGOSTORE INITIALIZATION (Zero-Methods Syntax)
 // ==========================================================================
 const sessionOptions = {
-    store: MongoStore.create({
+    store: new MongoStore({
         mongoUrl: dbUrl,
         crypto: { secret: process.env.SECRET || "presentation_backup_token" },
         touchAfter: 24 * 3600 
@@ -78,7 +78,7 @@ app.use((req, res, next) => {
 });
 
 // ==========================================================================
-// 🚀 DYNAMIC ROUTE LOADING
+// 🚀 ROUTE LOADING
 // ==========================================================================
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
@@ -148,4 +148,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`📡 Server active on port ${PORT}`));
+app.listen(PORT, () => console.log(`Base server operational on socket channel ${PORT}`));
