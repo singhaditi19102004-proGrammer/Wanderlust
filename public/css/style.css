@@ -1,186 +1,36 @@
-.card-body{
-    font-family: "Plus Jakarta Sans", sans-serif !important;
-    display:flex;
-    flex-direction:column;
-    
-}
-
-.container{
-    flex:1;
-    margin-top:2rem;
-    margin-bottom:2rem;
-}
-
-
-.navbar{
-    height:5rem;
-    background-color:white;
-}
-
-.fa-compass{
-    color:#fe424d;
-    font-size: 2rem;
-}
-
-.navlink{
-    color:#222222 !important;
-}
-
-.f-info-links a{
-    text-decoration:none;
-    color: #222222;
-
-}
-.f-info-links a:hover{
-    text-decoration: underline;
-    
-}
-
-
-
-.f-info-socials ,
-.f-info-links,
-.f-info-brand{
-    width:100%;
-    margin-right:1rem;
-    font-size:1.2rem;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-    
-
-
-
-
-.f-info {
-    display: flex;
-    flex-direction: column; /* Stack socials over links */
-    height: 10rem;
-    background-color: #ebebebb1;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    gap: 0.5rem;
-}
-
-.f-info-socials i {
-    font-size: 1.5rem;
-    margin: 0 1rem;
-    cursor: pointer;
-}
-
-/* FIX: Removed the 100vh and flex from card-body */
-.card-body {
-    padding: 0.5rem 0 !important; /* Give some space for text */
-}
-
-.card-text p {
-    font-weight: 400 !important;
-    font-size: 0.9rem;
-}
-
-/* FIX: Image styling for the SHOW page */
-.show-img {
-    height: 30rem; /* Use rem for a consistent large height */
-    width: 100%;
-    object-fit: cover;
-    border-radius: 1.5rem !important;
-}
-
-/* Standard listing card for Index page */
-.listing-card {
-    border: none !important;
+/* ==========================================================================
+   1. CORE & GLOBAL LAYOUT STYLES
+   ========================================================================== */
+.container {
+    flex: 1;
+    margin-top: 2rem;
     margin-bottom: 2rem;
-    padding-left:0;
-    padding-right:0;
 }
 
-.show-card img {
-    height: 20rem; /* Height for the index page images */
-    object-fit: cover;
-}
-.card-img-top{
-    border-radius: 1rem !important; 
-    width:100% !important;
-    object-fit:cover !important;
-
-}
-
-.card-body{
-    padding:0 !important;
-}
-.card-text p{
-    font-weight:400  !important;
-}
-
-.listing-link{
-    text-decoration:none;
-}
-
-.card-img-overlay{
-    opacity:0;
-}
-
-.card-img-overlay:hover{
-    opacity:0.2;
+/* ==========================================================================
+   2. NAVBAR STYLES
+   ========================================================================== */
+.navbar {
+    height: 5rem;
     background-color: white;
 }
 
-
-.add-btn{
-    background-color:#fe424d  !important;
-    border:none !important;
+.fa-compass {
+    color: #fe424d;
+    font-size: 2rem;
 }
 
-.edit-btn{
-    background-color:#fe424d  !important;
-    border:none !important;
+.navlink {
+    color: #222222 !important;
 }
 
-.show-img {
-    height: 30vh; 
-    object-fit: cover;
-    border-radius: 1.5rem !important;
+/* Search Architecture Component */
+.search-inp {
+    border-radius: 25px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
 }
 
-
-
-.btns {
-    display: flex;
-    margin-top: 1rem;
-    margin-bottom:2rem;
-}
-
-.edit-btn {
-    margin-right: 1rem; /* Space between Edit and Delete */
-}
-
-/* Custom Dark Mode Colors */
-[data-bs-theme="dark"] {
-    --bs-body-bg: #121212; /* Deep black/gray background */
-    --bs-body-color: #e0e0e0;
-    --bs-tertiary-bg: #1e1e1e; /* Card/Navbar background */
-}
-
-/* Specific styling for your Listing Cards in Dark Mode */
-[data-bs-theme="dark"] .listing-card {
-    background-color: #1e1e1e;
-    border: 1px solid #333;
-    transition: transform 0.2s;
-}
-
-[data-bs-theme="dark"] .listing-card:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
-}
-
-/* Make images look a bit softer in dark mode */
-[data-bs-theme="dark"] img {
-    filter: brightness(0.8) contrast(1.1);
-}
-
-/* Add to your style.css */
 .btn-search {
     background-color: #fe424d;
     color: white;
@@ -194,12 +44,6 @@
     opacity: 0.8;
 }
 
-.search-inp {
-    border-radius: 25px;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-}
-
 #suggestions-box .list-group-item {
     border: none;
     padding: 10px 15px;
@@ -209,4 +53,156 @@
 #suggestions-box .list-group-item:hover {
     background-color: #f8f9fa;
     color: #fe424d;
+}
+
+/* ==========================================================================
+   3. COMPONENT BUTTONS & CARD INTERFACES
+   ========================================================================== */
+.add-btn, .edit-btn {
+    background-color: #fe424d !important;
+    border: none !important;
+}
+
+.edit-btn {
+    margin-right: 1rem; /* Space between Edit and Delete buttons */
+}
+
+.btns {
+    display: flex;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Listing Card Wrappers */
+.listing-link {
+    text-decoration: none;
+}
+
+.listing-card {
+    border: none !important;
+    margin-bottom: 2rem;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.card-body {
+    font-family: "Plus Jakarta Sans", sans-serif !important;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0 !important; /* Unified padding boundaries */
+}
+
+.card-text p {
+    font-weight: 400 !important;
+    font-size: 0.9rem;
+}
+
+/* Multi-media Elements Styling */
+.card-img-top {
+    border-radius: 1rem !important; 
+    width: 100% !important;
+    object-fit: cover !important;
+}
+
+.show-card img {
+    height: 20rem; /* Fallback baseline height dimensions */
+    object-fit: cover;
+}
+
+.show-img {
+    height: 30rem; /* Use rem/vh context properties uniformly */
+    width: 100%;
+    object-fit: cover;
+    border-radius: 1.5rem !important;
+}
+
+.card-img-overlay {
+    opacity: 0;
+}
+
+.card-img-overlay:hover {
+    opacity: 0.2;
+    background-color: white;
+}
+
+/* ==========================================================================
+   4. SYSTEM FOOTER LAYOUT
+   ========================================================================== */
+.f-info {
+    display: flex;
+    flex-direction: column; /* Stack socials over link lists */
+    height: 10rem;
+    background-color: #ebebebb1;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+}
+
+.f-info-socials, .f-info-links, .f-info-brand {
+    width: 100%;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.f-info-links a {
+    text-decoration: none;
+    color: #222222;
+}
+
+.f-info-links a:hover {
+    text-decoration: underline;
+}
+
+.f-info-socials i {
+    font-size: 1.5rem;
+    margin: 0 1rem;
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   5. NATIVE DARK MODE EXTENSIONS
+   ========================================================================== */
+[data-bs-theme="dark"] {
+    --bs-body-bg: #121212; 
+    --bs-body-color: #e0e0e0;
+    --bs-tertiary-bg: #1e1e1e; 
+}
+
+[data-bs-theme="dark"] .listing-card {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    transition: transform 0.2s;
+}
+
+[data-bs-theme="dark"] .listing-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] img {
+    filter: brightness(0.8) contrast(1.1);
+}
+
+/* ==========================================================================
+   6. MASTER SHIELD: FIXES BLANK VISIBILITY ERRORS FOR MAPBOX MAPS
+   ========================================================================== */
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 10px;
+    background-color: #e5e3df !important; /* Native vector fallback skin hex background color */
+}
+
+/* Forces structural map tiles, canvas panels, and layout elements to maintain full visibility */
+#map canvas, 
+#map .mapboxgl-canvas,
+#map .mapboxgl-map,
+.mapboxgl-tile {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
 }
