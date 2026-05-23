@@ -13,6 +13,7 @@ const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
+const axios = require("axios");
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
@@ -33,14 +34,28 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================================================
-// 🛡️ EXPRESS 5 COMPATIBLE MONGOSTORE CONFIGURATION
+// 🛡️ THE AUTOMATIC VERSION-MATCHING SESSIONS ENGINE (Express 5 Safe)
 // ==========================================================================
-const sessionOptions = {
-    store: MongoStore.create({
+let productionStore;
+
+try {
+    // Strategy A: If Render has connect-mongo v5+ active, this compiles cleanly
+    productionStore = MongoStore.create({
         mongoUrl: dbUrl,
         crypto: { secret: process.env.SECRET || "presentation_backup_token" },
         touchAfter: 24 * 3600 
-    }),
+    });
+} catch (v5Error) {
+    // Strategy B: Fallback if Render down-grades the cache module dependency
+    productionStore = new MongoStore({
+        mongoUrl: dbUrl,
+        crypto: { secret: process.env.SECRET || "presentation_backup_token" },
+        touchAfter: 24 * 3600 
+    });
+}
+
+const sessionOptions = {
+    store: productionStore,
     secret: process.env.SECRET || "presentation_backup_token",
     resave: false,
     saveUninitialized: true,
@@ -55,7 +70,7 @@ app.use(session(sessionOptions));
 app.use(flash());
 
 // ==========================================================================
-// 🛡️ USER & LISTING MODELS INJECTION
+// 🛡️ DATABASE INTERFACES RESOLUTION
 // ==========================================================================
 const User = require("./models/user.js");
 const Listing = require("./models/listing.js");
@@ -67,7 +82,7 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// Global System Flash Tokens & Current User Session Locals Injection
+// Global System Flash Tokens & Session Context
 app.use((req, res, next) => {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
@@ -76,7 +91,7 @@ app.use((req, res, next) => {
 });
 
 // ==========================================================================
-// 🚀 ALL APPLICATION ROUTERS FULLY RESTORED
+// 🚀 ALL STRATEGIC SYSTEM ROUTERS ENGAGED
 // ==========================================================================
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
@@ -84,14 +99,13 @@ const userRouter = require("./routes/user.js");
 
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
-app.use("/", userRouter); // Re-enables /login, /signup, and /logout handles!
+app.use("/", userRouter); // Triggers /login, /signup, and /logout hooks completely
 
 app.get("/", (req, res) => res.redirect("/listings"));
 
 // ==========================================================================
-// 🗺️ EMERGENCY REPAIR HOOK FOR MAP COORDINATES (Bypasses Rate Limits)
+// 🗺️ EMERGENCY DATA REPAIR ENDPOINT FOR MAP COMPLIANCE
 // ==========================================================================
-const axios = require("axios");
 app.get("/run-global-map-repair", async (req, res) => {
     try {
         const listings = await Listing.find({});
@@ -104,8 +118,9 @@ app.get("/run-global-map-repair", async (req, res) => {
         let fixCount = 0;
         for (let listing of listings) {
             try {
+                // If listing already has coordinate values stored, skip it safely
                 if (listing.geometry && listing.geometry.coordinates && listing.geometry.coordinates.length === 2) {
-                    continue; // Skip listings that already have saved coordinates
+                    continue; 
                 }
                 const query = `${listing.location}, ${listing.country}`;
                 const url = `http://api.positionstack.com/v1/forward?access_key=${apiKey}&query=${encodeURIComponent(query)}&limit=1`;
@@ -123,12 +138,12 @@ app.get("/run-global-map-repair", async (req, res) => {
                     });
                     fixCount++;
                 }
-                await new Promise(resolve => setTimeout(resolve, 500)); // Safer delay to avoid 429 limits
+                await new Promise(resolve => setTimeout(resolve, 500)); // Throttling delay to handle rate limits
             } catch (inner) {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
             }
         }
-        res.send(`✨ SUCCESS! Cloud database script ran smoothly. Repaired coordinates for ${fixCount} new listings inside Atlas!`);
+        res.send(`✨ SUCCESS! Cloud database script ran smoothly. Evaluated and repaired coordinates for ${fixCount} new listings inside Atlas!`);
     } catch (err) {
         res.send("❌ Critical route execution failure: " + err.message);
     }
@@ -141,7 +156,7 @@ app.use((req, res) => {
     res.status(404).render("error.ejs", { message: "Page Not Found!" });
 });
 
-// Final Express System Error Handler Hook Middleware Pipeline
+// Final System Exception Response Handler Hook
 app.use((err, req, res, next) => {
     let { statusCode = 500, message = "Something went wrong!" } = err;
     if (!res.headersSent) {
@@ -150,4 +165,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`📡 Full framework stack online on channel socket port ${PORT}`));
+app.listen(PORT, () => console.log(`📡 Full production framework live on port ${PORT}`));
