@@ -9,14 +9,15 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const { MongoStore } = require("connect-mongo"); // Fixed Destructuring for v6
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
+const axios = require("axios");
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
-// Connect to MongoDB Atlas
+// Connect to MongoDB Atlas Cluster
 async function main() {
     await mongoose.connect(dbUrl);
 }
@@ -60,12 +61,14 @@ app.use(flash());
 const User = require("./models/user.js");
 const Listing = require("./models/listing.js");
 
-// Passport Middleware Matrix Setup
+// Passport Middleware Matrix Setup - RECTIFIED REFERENCE FUNCTIONS
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+
+// Passed by reference directly, NOT called as functions!
+passport.serializeUser(User.serializeUser);
+passport.deserializeUser(User.deserializeUser);
 
 // Global System Local Injection Variables Middleware
 app.use((req, res, next) => {
@@ -91,13 +94,13 @@ app.get("/", (req, res) => res.redirect("/listings"));
 // ==========================================================================
 // 🗺️ EMERGENCY REPAIR ENDPOINT FOR MAP COMPLIANCE (Bypasses Rate Limits)
 // ==========================================================================
-const axios = require("axios");
 app.get("/run-global-map-repair", async (req, res) => {
     try {
         const listings = await Listing.find({});
-        const apiKey = process.env.GEO_API_KEY; 
+        // Added safety token verification fallback string bypass
+        const apiKey = process.env.GEO_API_KEY || "YOUR_POSITIONSTACK_API_KEY"; 
 
-        if (!apiKey) {
+        if (!apiKey || apiKey === "YOUR_POSITIONSTACK_API_KEY") {
             return res.send("❌ Error: GEO_API_KEY is missing from Render environment variables!");
         }
 
@@ -123,7 +126,7 @@ app.get("/run-global-map-repair", async (req, res) => {
                     });
                     fixCount++;
                 }
-                await new Promise(resolve => setTimeout(resolve, 500)); 
+                await new Promise(resolve => setTimeout(resolve, 600)); // Safer timeout interval block
             } catch (inner) {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
             }
