@@ -11,7 +11,7 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         // This completely bypasses the strict server signature requirement!
-        upload_preset: wanderlust_preset, // <-- Paste your exact preset name here
+        upload_preset: 'wanderlust_preset', // <-- Paste your exact preset name here
         allowed_formats: ["png", "jpg", "jpeg"],
     },
 });

@@ -6,10 +6,8 @@ const multer = require("multer");
 const { storage } = require("../cloudConfig.js");
 const upload = multer({ storage });
 
-// Link directly to your controllers layer
 const listingController = require("../controllers/listings.js");
 
-// --- INDEX & CREATE ROUTES ---
 router.route("/")
     .get(wrapAsync(listingController.index))
     .post(
@@ -19,10 +17,8 @@ router.route("/")
         wrapAsync(listingController.createListing)
     );
 
-// --- NEW LISTING ROUTE (MUST remain above /:id) ---
 router.get("/new", isLoggedIn, listingController.renderNewForm);
 
-// --- SHOW, UPDATE, & DELETE ROUTES ---
 router.route("/:id")
     .get(wrapAsync(listingController.showListing))
     .put(
@@ -32,13 +28,8 @@ router.route("/:id")
         validateListing,
         wrapAsync(listingController.updateListing)
     )
-    .delete(
-        isLoggedIn, 
-        isOwner, 
-        wrapAsync(listingController.deleteListing)
-    );
+    .delete(isLoggedIn, isOwner, wrapAsync(listingController.deleteListing));
 
-// --- EDIT FORM ROUTE ---
 router.get("/:id/edit", isLoggedIn, isOwner, wrapAsync(listingController.renderEditForm));
 
 module.exports = router;
