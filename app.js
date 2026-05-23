@@ -9,11 +9,13 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const axios = require("axios");
+
+// Legacy-aligned initialization pattern for connect-mongo v3 or older
+const MongoStore = require("connect-mongo")(session); 
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
@@ -34,28 +36,14 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================================================
-// 🛡️ THE AUTOMATIC VERSION-MATCHING SESSIONS ENGINE (Express 5 Safe)
+// 🛡️ LEGACY V3 COMPATIBLE SESSIONS STORAGE CONFIGURATION
 // ==========================================================================
-let productionStore;
-
-try {
-    // Strategy A: If Render has connect-mongo v5+ active, this compiles cleanly
-    productionStore = MongoStore.create({
-        mongoUrl: dbUrl,
-        crypto: { secret: process.env.SECRET || "presentation_backup_token" },
-        touchAfter: 24 * 3600 
-    });
-} catch (v5Error) {
-    // Strategy B: Fallback if Render down-grades the cache module dependency
-    productionStore = new MongoStore({
-        mongoUrl: dbUrl,
-        crypto: { secret: process.env.SECRET || "presentation_backup_token" },
-        touchAfter: 24 * 3600 
-    });
-}
-
 const sessionOptions = {
-    store: productionStore,
+    store: new MongoStore({
+        url: dbUrl, // Legacy version uses 'url' instead of 'mongoUrl'
+        secret: process.env.SECRET || "presentation_backup_token",
+        touchAfter: 24 * 3600 
+    }),
     secret: process.env.SECRET || "presentation_backup_token",
     resave: false,
     saveUninitialized: true,
@@ -99,7 +87,7 @@ const userRouter = require("./routes/user.js");
 
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
-app.use("/", userRouter); // Triggers /login, /signup, and /logout hooks completely
+app.use("/", userRouter); 
 
 app.get("/", (req, res) => res.redirect("/listings"));
 
@@ -118,7 +106,6 @@ app.get("/run-global-map-repair", async (req, res) => {
         let fixCount = 0;
         for (let listing of listings) {
             try {
-                // If listing already has coordinate values stored, skip it safely
                 if (listing.geometry && listing.geometry.coordinates && listing.geometry.coordinates.length === 2) {
                     continue; 
                 }
@@ -138,7 +125,7 @@ app.get("/run-global-map-repair", async (req, res) => {
                     });
                     fixCount++;
                 }
-                await new Promise(resolve => setTimeout(resolve, 500)); // Throttling delay to handle rate limits
+                await new Promise(resolve => setTimeout(resolve, 500)); 
             } catch (inner) {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
             }
