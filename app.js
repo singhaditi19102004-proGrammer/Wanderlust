@@ -16,7 +16,7 @@ const LocalStrategy = require("passport-local");
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
-// Connect to MongoDB Atlas
+// Establish Database Connection Engine
 async function main() {
     await mongoose.connect(dbUrl);
 }
@@ -24,25 +24,25 @@ main()
     .then(() => console.log("🚀 Connected to Cloud Production Database successfully!"))
     .catch((err) => console.log("❌ Database connection engine failure:", err));
 
-// View Engine Configurations
+// Engine View Layout Settings
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Body Parsers & Static Asset Routing Middlewares
+// Parser Middleware Setup 
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Persistent Session Configuration Cluster
-const store = MongoStore.create({
-    mongoUrl: dbUrl,
-    crypto: { secret: process.env.SECRET || "presentation_backup_token" },
-    touchAfter: 24 * 3600 
-});
-
+// ==========================================================================
+// 🛡️ UNIVERSAL VERSION-AGNOSTIC SESSION STORE RULES
+// ==========================================================================
 const sessionOptions = {
-    store,
+    store: MongoStore.create({
+        mongoUrl: dbUrl,
+        crypto: { secret: process.env.SECRET || "presentation_backup_token" },
+        touchAfter: 24 * 3600 
+    }),
     secret: process.env.SECRET || "presentation_backup_token",
     resave: false,
     saveUninitialized: true,
@@ -52,11 +52,12 @@ const sessionOptions = {
         httpOnly: true
     }
 };
+
 app.use(session(sessionOptions));
 app.use(flash());
 
 // ==========================================================================
-// 🛡️ INLINE USER & LISTING MODELS (Bypasses external file case-sensitivity locks)
+// 🛡️ EMERGENCY INLINE MODEL SCHEMAS (Bypasses external folder file locks)
 // ==========================================================================
 const Schema = mongoose.Schema;
 
@@ -67,7 +68,7 @@ try {
     const passportLocalMongoose = require("passport-local-mongoose");
     userSchema.plugin(passportLocalMongoose);
 } catch (e) {
-    console.log("Passport plugin error handled.");
+    console.log("Passport plugin attachment handled inline.");
 }
 let User = mongoose.models.User || mongoose.model("User", userSchema);
 
@@ -90,14 +91,14 @@ const listingSchema = new Schema({
 });
 let Listing = mongoose.models.Listing || mongoose.model("Listing", listingSchema);
 
-// Passport Strategies Configuration
+// Authentication Middleware Configuration 
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// Global System Response Flash Middleware Tokens Local Injection
+// Global System Response Flash Tokens Local Injection Middleware
 app.use((req, res, next) => {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
@@ -106,7 +107,7 @@ app.use((req, res, next) => {
 });
 
 // ==========================================================================
-// 🚀 DYNAMIC CASE-INSENSITIVE ROUTER LOADING
+// 🚀 DYNAMIC ROUTE IMPORTS (Wrapped in safe fallbacks)
 // ==========================================================================
 let listingRouter, reviewRouter, userRouter;
 try { listingRouter = require("./routes/listing.js"); } catch(e) { listingRouter = require("./routes/Listing.js"); }
@@ -133,14 +134,17 @@ app.get("/run-global-map-repair", async (req, res) => {
         }
 
         let fixCount = 0;
+
         for (let listing of listings) {
             try {
                 const query = `${listing.location}, ${listing.country}`;
                 const url = `http://api.positionstack.com/v1/forward?access_key=${apiKey}&query=${encodeURIComponent(query)}&limit=1`;
                 
                 const apiResponse = await axios.get(url, { timeout: 5000 });
+                
                 if (apiResponse.data && apiResponse.data.data && apiResponse.data.data[0]) {
                     const geo = apiResponse.data.data[0];
+                    
                     await Listing.findByIdAndUpdate(listing._id, {
                         $set: {
                             "geometry": {
@@ -156,18 +160,19 @@ app.get("/run-global-map-repair", async (req, res) => {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
             }
         }
+
         res.send(`✨ SUCCESS! Cloud script ran smoothly. Evaluated and repaired coordinates for ${fixCount} listings in Atlas without changing ownership configurations!`);
     } catch (err) {
         res.send("❌ Critical route execution failure: " + err.message);
     }
 });
 
-// Catch-All Missing Route Handler
+// Catch-All Missing Route Frame Errors Configuration
 app.all("*", (req, res, next) => {
     res.status(404).render("error.ejs", { message: "Page Not Found!" });
 });
 
-// System Error Pipeline Middleware Error Handler
+// Final Express System Error Handler Hook Pipeline Middleware
 app.use((err, req, res, next) => {
     let { statusCode = 500, message = "Something went wrong!" } = err;
     if (!res.headersSent) {
@@ -175,5 +180,8 @@ app.use((err, req, res, next) => {
     }
 });
 
+// Initialize Framework Web Server Core Socket Listener
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`📡 Server active on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`📡 Server active on port ${PORT}`);
+});
