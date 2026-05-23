@@ -8,11 +8,15 @@ const mongoose = require("mongoose");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
-const axios = require("axios");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
+const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
-// Connect directly to your MongoDB Atlas Cluster
+// Connect to MongoDB Atlas
 async function main() {
     await mongoose.connect(dbUrl);
 }
@@ -20,72 +24,74 @@ main()
     .then(() => console.log("🚀 Connected to Cloud Production Database successfully!"))
     .catch((err) => console.log("❌ Database connection failure:", err));
 
-// Engine View Layout Settings
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Standard Body Parsers & Static Asset Routing
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
-// Mock authentication/flash variables to prevent EJS view errors
+// ==========================================================================
+// 🛡️ EXPRESS 5 COMPATIBLE MONGOSTORE CONFIGURATION
+// ==========================================================================
+const sessionOptions = {
+    store: MongoStore.create({
+        mongoUrl: dbUrl,
+        crypto: { secret: process.env.SECRET || "presentation_backup_token" },
+        touchAfter: 24 * 3600 
+    }),
+    secret: process.env.SECRET || "presentation_backup_token",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        expires: Date.now() + 7 * 24 * 60 * 60 * 1000, 
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        httpOnly: true
+    }
+};
+
+app.use(session(sessionOptions));
+app.use(flash());
+
+// ==========================================================================
+// 🛡️ USER & LISTING MODELS INJECTION
+// ==========================================================================
+const User = require("./models/user.js");
+const Listing = require("./models/listing.js");
+
+// Passport Authentication Configuration
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+// Global System Flash Tokens & Current User Session Locals Injection
 app.use((req, res, next) => {
-    res.locals.success = [];
-    res.locals.error = [];
-    res.locals.currUser = null; 
+    res.locals.success = req.flash("success");
+    res.locals.error = req.flash("error");
+    res.locals.currUser = req.user;
     next();
 });
 
 // ==========================================================================
-// 🛡️ INLINE LISTING SCHEMA
+// 🚀 ALL APPLICATION ROUTERS FULLY RESTORED
 // ==========================================================================
-const Schema = mongoose.Schema;
-const listingSchema = new Schema({
-    title: { type: String, required: true },
-    description: String,
-    image: {
-        filename: String,
-        url: String
-    },
-    price: Number,
-    location: String,
-    country: String,
-    reviews: [{ type: Schema.Types.ObjectId, ref: "Review" }],
-    owner: { type: Schema.Types.ObjectId, ref: "User" },
-    geometry: {
-        type: { type: String, enum: ["Point"], required: true },
-        coordinates: { type: [Number], required: true }
-    }
-});
-const Listing = mongoose.models.Listing || mongoose.model("Listing", listingSchema);
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
 
-// ==========================================================================
-// 🚀 CLEAN RENDER ROUTES FOR MAP VIEWING
-// ==========================================================================
-
-// Homepage Index Route
-app.get("/listings", async (req, res) => {
-    const allListings = await Listing.find({});
-    res.render("listings/index.ejs", { allListings });
-});
-
-// Show Route
-app.get("/listings/:id", async (req, res) => {
-    const { id } = req.params;
-    const listing = await Listing.findById(id);
-    if (!listing) {
-        return res.redirect("/listings");
-    }
-    res.render("listings/show.ejs", { listing });
-});
+app.use("/listings", listingRouter);
+app.use("/listings/:id/reviews", reviewRouter);
+app.use("/", userRouter); // Re-enables /login, /signup, and /logout handles!
 
 app.get("/", (req, res) => res.redirect("/listings"));
 
 // ==========================================================================
-// 🗺️ THE 100% CORRECT SHORTCUT ROADMAP TO REPAIR MAP COORDINATES
+// 🗺️ EMERGENCY REPAIR HOOK FOR MAP COORDINATES (Bypasses Rate Limits)
 // ==========================================================================
+const axios = require("axios");
 app.get("/run-global-map-repair", async (req, res) => {
     try {
         const listings = await Listing.find({});
@@ -98,6 +104,9 @@ app.get("/run-global-map-repair", async (req, res) => {
         let fixCount = 0;
         for (let listing of listings) {
             try {
+                if (listing.geometry && listing.geometry.coordinates && listing.geometry.coordinates.length === 2) {
+                    continue; // Skip listings that already have saved coordinates
+                }
                 const query = `${listing.location}, ${listing.country}`;
                 const url = `http://api.positionstack.com/v1/forward?access_key=${apiKey}&query=${encodeURIComponent(query)}&limit=1`;
                 
@@ -114,23 +123,31 @@ app.get("/run-global-map-repair", async (req, res) => {
                     });
                     fixCount++;
                 }
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 500)); // Safer delay to avoid 429 limits
             } catch (inner) {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
             }
         }
-        res.send(`✨ SUCCESS! Cloud database script ran smoothly. Repaired coordinates for ${fixCount} listings in Atlas!`);
+        res.send(`✨ SUCCESS! Cloud database script ran smoothly. Repaired coordinates for ${fixCount} new listings inside Atlas!`);
     } catch (err) {
-        res.send("❌ Critical shortcut route execution failure: " + err.message);
+        res.send("❌ Critical route execution failure: " + err.message);
     }
 });
 
 // ==========================================================================
-// 🛡️ ZERO-ROUTER FALLBACK CATCH (Bypasses path-to-regexp string compilation)
+// 🛡️ ZERO-ROUTER FALLBACK CATCH (Express 5 Safe)
 // ==========================================================================
 app.use((req, res) => {
-    res.status(404).send("Page Not Found");
+    res.status(404).render("error.ejs", { message: "Page Not Found!" });
+});
+
+// Final Express System Error Handler Hook Middleware Pipeline
+app.use((err, req, res, next) => {
+    let { statusCode = 500, message = "Something went wrong!" } = err;
+    if (!res.headersSent) {
+        res.status(statusCode).render("error.ejs", { message });
+    }
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`📡 Map-centric server active on port ${PORT}`));
+app.listen(PORT, () => console.log(`📡 Full framework stack online on channel socket port ${PORT}`));
