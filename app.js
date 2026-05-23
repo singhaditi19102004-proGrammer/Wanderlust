@@ -9,7 +9,7 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const MongoStore = require("connect-mongo")(session); // Ensures compatibility with version 3/4 legacy wrappers
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -35,14 +35,20 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================================================
-// 🛡️ UNIVERSAL VERSION-AGNOSTIC SESSION STORE RULES
+// 🛡️ COMPATIBLE LEGACY SESSION STORE INSTANTIATION
 // ==========================================================================
+const store = new MongoStore({
+    url: dbUrl,
+    secret: process.env.SECRET || "presentation_backup_token",
+    touchAfter: 24 * 3600 
+});
+
+store.on("error", (err) => {
+    console.log("ERROR IN MONGO SESSION STORE", err);
+});
+
 const sessionOptions = {
-    store: MongoStore.create({
-        mongoUrl: dbUrl,
-        crypto: { secret: process.env.SECRET || "presentation_backup_token" },
-        touchAfter: 24 * 3600 
-    }),
+    store: store,
     secret: process.env.SECRET || "presentation_backup_token",
     resave: false,
     saveUninitialized: true,
