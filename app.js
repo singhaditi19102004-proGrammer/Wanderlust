@@ -127,7 +127,8 @@ app.get("/run-global-map-repair", async (req, res) => {
 
 // Basic Error Handling Fallbacks
 // To this new line:
-app.all("(.*)", (req, res) => res.status(404).send("Page Not Found"));
+// To this new line:
+app.get("/*", (req, res) => res.status(404).send("Page Not Found"));
 app.use((err, req, res, next) => {
     res.status(500).send("Something went wrong with the server engine layout.");
 });
