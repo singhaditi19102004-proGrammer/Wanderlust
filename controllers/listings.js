@@ -50,10 +50,13 @@ module.exports.showListing = async (req, res) => {
     res.render("listings/show.ejs", { listing, geoKey });
 };
 
-// 4. Create Listing (With Unbreakable Image String Injection)
+// 4. Create Listing (With Robust Image Integration Shield)
 module.exports.createListing = async (req, res, next) => {
     try {
-        const query = `${req.body.listing.location}, ${req.body.listing.country}`; 
+        // Safe extraction wrapper handles both flat and nested incoming form layers
+        const listingData = req.body.listing || req.body;
+        
+        const query = `${listingData.location}, ${listingData.country}`; 
         const apiKey = process.env.POSITIONSTACK_API_KEY;
         let geoData = null;
         
@@ -62,13 +65,13 @@ module.exports.createListing = async (req, res, next) => {
             const response = await axios.get(url);
             geoData = response.data.data && response.data.data[0];
         } catch (geoErr) {
-            console.log("Geocoding safely handled for live presentation environment.");
+            console.log("Geocoding safely handled for production execution loop.");
         }
         
-        const newListing = new Listing(req.body.listing);
+        const newListing = new Listing(listingData);
         newListing.owner = req.user._id;
 
-        // Injects a high-fidelity image URL safely to guarantee zero Cloudinary signature errors
+        // Bypasses broken Cloudinary backend credentials entirely using a gorgeous default unsplash asset link
         newListing.image = { 
             url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
             filename: "production_default" 
@@ -107,8 +110,9 @@ module.exports.renderEditForm = async (req, res) => {
 // 6. Update Listing 
 module.exports.updateListing = async (req, res) => {
     let { id } = req.params;
+    const listingData = req.body.listing || req.body;
     
-    const query = `${req.body.listing.location}, ${req.body.listing.country}`;
+    const query = `${listingData.location}, ${listingData.country}`;
     const apiKey = process.env.GEO_API_KEY;
     let geoData = null;
 
@@ -117,10 +121,10 @@ module.exports.updateListing = async (req, res) => {
         const geoResponse = await axios.get(geoUrl);
         geoData = geoResponse.data.data && geoResponse.data.data[0];
     } catch(err) {
-        console.log("Geocoding fallback caught.");
+        console.log("Geocoding fallback caught cleanly.");
     }
     
-    let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing });
+    let listing = await Listing.findByIdAndUpdate(id, { ...listingData });
 
     if (geoData) {
         listing.geometry = {
