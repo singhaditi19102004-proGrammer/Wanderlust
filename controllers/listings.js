@@ -60,7 +60,7 @@ module.exports.showListing = async (req, res, next) => {
 };
 
 // ==========================================================================
-// 4. CREATE LISTING ROUTE (With Complete Regional & Global Map Simulator)
+// 4. CREATE LISTING ROUTE (Handles Multi-part Images & Map Simulation)
 // ==========================================================================
 module.exports.createListing = async (req, res, next) => {
     try {
@@ -68,19 +68,24 @@ module.exports.createListing = async (req, res, next) => {
         const newListing = new Listing(listingData);
         newListing.owner = req.user._id;
 
-        // Dynamic Image Object Validation & Parsing
-        if (listingData.image && listingData.image.trim() !== "") {
-            newListing.image = { url: listingData.image, filename: "user_upload" };
+        // --- IMAGE HANDLING PIPELINE ---
+        if (typeof req.file !== "undefined") {
+            // If binary file was uploaded via multi-part form
+            newListing.image = { url: req.file.path, filename: req.file.filename };
+        } else if (listingData.image && listingData.image.trim() !== "") {
+            // Fallback if URL text string was supplied
+            newListing.image = { url: listingData.image, filename: "user_text_url" };
         } else {
+            // Absolute baseline fallback if empty
             newListing.image = { 
                 url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
                 filename: "production_default" 
             };
         }
 
-        // MASTER PRESENTATION MAP SIMULATOR (Create Pipeline)
+        // --- REGIONAL & GLOBAL MAP SIMULATOR ---
         const loc = (listingData.location || "").toLowerCase().trim();
-        let simulatedCoords = [77.2090, 28.6130]; // New Delhi Default
+        let simulatedCoords = [77.2090, 28.6130]; // New Delhi Baseline Default
 
         if (loc.includes("new york") || loc.includes("nyc") || loc.includes("united states")) {
             simulatedCoords = [-74.0060, 40.7128];
@@ -101,11 +106,11 @@ module.exports.createListing = async (req, res, next) => {
         } else if (loc.includes("jamshedpur") || loc.includes("jsr")) {
             simulatedCoords = [86.2029, 22.8046];
         } else if (loc.includes("seoul") || loc.includes("korea")) {
-            simulatedCoords = [126.9780, 37.5665]; // Seoul, South Korea
+            simulatedCoords = [126.9780, 37.5665];
         } else if (loc.includes("tokyo") || loc.includes("japan")) {
-            simulatedCoords = [139.6917, 35.6895]; // Tokyo, Japan
+            simulatedCoords = [139.6917, 35.6895];
         } else if (loc.includes("sydney") || loc.includes("australia")) {
-            simulatedCoords = [151.2093, -33.8688]; // Sydney, Australia
+            simulatedCoords = [151.2093, -33.8688];
         }
 
         newListing.geometry = {
@@ -136,26 +141,16 @@ module.exports.renderEditForm = async (req, res) => {
 };
 
 // ==========================================================================
-// 6. UPDATE LISTING ROUTE (With Complete Regional & Global Map Simulator)
+// 6. UPDATE LISTING ROUTE (Synchronizes Image Streams & Geometries)
 // ==========================================================================
 module.exports.updateListing = async (req, res, next) => {
     try {
         let { id } = req.params;
         const listingData = req.body.listing;
 
-        // Dynamic Image Object Validation & Parsing
-        if (listingData.image && listingData.image.trim() !== "") {
-            listingData.image = { url: listingData.image, filename: "user_update" };
-        } else {
-            listingData.image = { 
-                url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
-                filename: "production_default" 
-            };
-        }
-
-        // MASTER PRESENTATION MAP SIMULATOR (Update Pipeline)
+        // --- REGIONAL & GLOBAL MAP SIMULATOR ---
         const loc = (listingData.location || "").toLowerCase().trim();
-        let simulatedCoords = [77.2090, 28.6130]; // New Delhi Default
+        let simulatedCoords = [77.2090, 28.6130]; // New Delhi Baseline Default
 
         if (loc.includes("new york") || loc.includes("nyc") || loc.includes("united states")) {
             simulatedCoords = [-74.0060, 40.7128];
@@ -176,11 +171,11 @@ module.exports.updateListing = async (req, res, next) => {
         } else if (loc.includes("jamshedpur") || loc.includes("jsr")) {
             simulatedCoords = [86.2029, 22.8046];
         } else if (loc.includes("seoul") || loc.includes("korea")) {
-            simulatedCoords = [126.9780, 37.5665]; // Seoul, South Korea
+            simulatedCoords = [126.9780, 37.5665];
         } else if (loc.includes("tokyo") || loc.includes("japan")) {
-            simulatedCoords = [139.6917, 35.6895]; // Tokyo, Japan
+            simulatedCoords = [139.6917, 35.6895];
         } else if (loc.includes("sydney") || loc.includes("australia")) {
-            simulatedCoords = [151.2093, -33.8688]; // Sydney, Australia
+            simulatedCoords = [151.2093, -33.8688];
         }
 
         listingData.geometry = {
@@ -188,10 +183,25 @@ module.exports.updateListing = async (req, res, next) => {
             coordinates: simulatedCoords
         };
 
-        // Executes update and returns the modified instance context immediately
-        let updatedListing = await Listing.findByIdAndUpdate(id, { ...listingData }, { runValidators: true, new: true });
-        await updatedListing.save();
+        // Update basic text properties and capture modified context data structure
+        let listing = await Listing.findByIdAndUpdate(id, { ...listingData }, { runValidators: true, new: true });
 
+        // --- IMAGE OBJECT CONTEXT SYNCHRONIZATION ---
+        if (typeof req.file !== "undefined") {
+            // Overwrite database object fields with multi-part uploaded file details
+            listing.image = { url: req.file.path, filename: req.file.filename };
+        } else if (listingData.image && typeof listingData.image === "string" && listingData.image.trim() !== "") {
+            // Keep user text link entry if supplied
+            listing.image = { url: listingData.image, filename: "user_updated_text" };
+        } else if (!listing.image || !listing.image.url) {
+            // Fallback image to secure rendering integrity
+            listing.image = { 
+                url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
+                filename: "production_default" 
+            };
+        }
+
+        await listing.save();
         req.flash("success", "Listing Updated!");
         res.redirect(`/listings/${id}`);
     } catch (err) {
