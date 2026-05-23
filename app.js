@@ -9,13 +9,11 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
+const MongoStore = require("connect-mongo"); // Pure modern import
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const axios = require("axios");
-
-// Legacy-aligned initialization pattern for connect-mongo v3 or older
-const MongoStore = require("connect-mongo")(session); 
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
@@ -36,12 +34,12 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================================================
-// 🛡️ LEGACY V3 COMPATIBLE SESSIONS STORAGE CONFIGURATION
+// 🛡️ MODERNIZE V5 ONLY SESSIONS INITIALIZATION LAYOUT
 // ==========================================================================
 const sessionOptions = {
-    store: new MongoStore({
-        url: dbUrl, // Legacy version uses 'url' instead of 'mongoUrl'
-        secret: process.env.SECRET || "presentation_backup_token",
+    store: MongoStore.create({
+        mongoUrl: dbUrl,
+        crypto: { secret: process.env.SECRET || "presentation_backup_token" },
         touchAfter: 24 * 3600 
     }),
     secret: process.env.SECRET || "presentation_backup_token",
@@ -58,7 +56,7 @@ app.use(session(sessionOptions));
 app.use(flash());
 
 // ==========================================================================
-// 🛡️ DATABASE INTERFACES RESOLUTION
+// 🛡️ USER & LISTING MODELS INJECTION
 // ==========================================================================
 const User = require("./models/user.js");
 const Listing = require("./models/listing.js");
@@ -79,7 +77,7 @@ app.use((req, res, next) => {
 });
 
 // ==========================================================================
-// 🚀 ALL STRATEGIC SYSTEM ROUTERS ENGAGED
+// 🚀 ROUTE BINDINGS
 // ==========================================================================
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
@@ -137,7 +135,7 @@ app.get("/run-global-map-repair", async (req, res) => {
 });
 
 // ==========================================================================
-// 🛡️ ZERO-ROUTER FALLBACK CATCH (Express 5 Safe)
+// 🛡️ ZERO-ROUTER FALLBACK CATCH (Express 5 Safe Middleware Layout)
 // ==========================================================================
 app.use((req, res) => {
     res.status(404).render("error.ejs", { message: "Page Not Found!" });
@@ -152,4 +150,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`📡 Full production framework live on port ${PORT}`));
+app.listen(PORT, () => console.log(`📡 Full version-synchronized production stack online on port ${PORT}`));
