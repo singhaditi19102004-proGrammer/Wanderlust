@@ -9,14 +9,14 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
-const axios = require("axios");
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
-// Establish Database Connection Engine
+// Connect to MongoDB Atlas
 async function main() {
     await mongoose.connect(dbUrl);
 }
@@ -33,40 +33,14 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================================================
-// 🛡️ THE 100% BULLETPROOF RUNTIME SESSIONS RESOLVER (Bypasses compilation flags)
+// 🛡️ EXPRESS 5 CERTIFIED SESSIONS LAYOUT
 // ==========================================================================
-let MongoStore;
-let sessionStoreOptions = {
-    mongoUrl: dbUrl,
-    crypto: { secret: process.env.SECRET || "presentation_backup_token" },
-    touchAfter: 24 * 3600
-};
-
-try {
-    const rawModule = require("connect-mongo");
-    if (typeof rawModule === "function") {
-        // Handle as v3 or older function wrapper style
-        MongoStore = rawModule(session);
-        sessionStoreOptions = {
-            url: dbUrl,
-            secret: process.env.SECRET || "presentation_backup_token",
-            touchAfter: 24 * 3600
-        };
-    } else if (rawModule && rawModule.create) {
-        // Handle as v5+ modern class layout factory execution
-        MongoStore = rawModule;
-    } else {
-        // Fallback fallback configuration structure handles
-        MongoStore = rawModule;
-    }
-} catch (e) {
-    console.log("Store module strategy resolving...");
-}
-
 const sessionOptions = {
-    store: (MongoStore && MongoStore.create && typeof MongoStore.create === "function") 
-            ? MongoStore.create(sessionStoreOptions) 
-            : new MongoStore(sessionStoreOptions),
+    store: MongoStore.create({
+        mongoUrl: dbUrl,
+        crypto: { secret: process.env.SECRET || "presentation_backup_token" },
+        touchAfter: 24 * 3600 
+    }),
     secret: process.env.SECRET || "presentation_backup_token",
     resave: false,
     saveUninitialized: true,
@@ -81,17 +55,19 @@ app.use(session(sessionOptions));
 app.use(flash());
 
 // ==========================================================================
-// 🛡️ DATA INTERFACES IMPORTS
+// 🛡️ CLEAN MODEL IMPORTATION HOOKS
 // ==========================================================================
 const User = require("./models/user.js");
 const Listing = require("./models/listing.js");
 
+// Passport Middleware Matrix Setup
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+// Global System Local Injection Variables Middleware
 app.use((req, res, next) => {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
@@ -100,7 +76,7 @@ app.use((req, res, next) => {
 });
 
 // ==========================================================================
-// 🚀 ALL STRATEGIC SYSTEM ROUTERS ENGAGED
+// 🚀 ALL STRATEGIC CHANNELS RESTORED UNCONDITIONALLY
 // ==========================================================================
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
@@ -113,8 +89,9 @@ app.use("/", userRouter);
 app.get("/", (req, res) => res.redirect("/listings"));
 
 // ==========================================================================
-// 🗺️ EMERGENCY UNCONDITIONAL REPAIR HOOK FOR MAP COORDINATES
+// 🗺️ EMERGENCY REPAIR ENDPOINT FOR MAP COMPLIANCE (Bypasses Rate Limits)
 // ==========================================================================
+const axios = require("axios");
 app.get("/run-global-map-repair", async (req, res) => {
     try {
         const listings = await Listing.find({});
@@ -127,7 +104,6 @@ app.get("/run-global-map-repair", async (req, res) => {
         let fixCount = 0;
         for (let listing of listings) {
             try {
-                // If coordinates already exist and are valid, skip it to avoid wasting API quota
                 if (listing.geometry && listing.geometry.coordinates && listing.geometry.coordinates.length === 2 && listing.geometry.coordinates[0] !== 0) {
                     continue; 
                 }
@@ -147,24 +123,25 @@ app.get("/run-global-map-repair", async (req, res) => {
                     });
                     fixCount++;
                 }
-                await new Promise(resolve => setTimeout(resolve, 600)); // Higher delay to fully clear free tier limits
+                await new Promise(resolve => setTimeout(resolve, 500)); 
             } catch (inner) {
                 console.log(`Skipping ${listing.location}: ${inner.message}`);
             }
         }
-        res.send(`✨ SUCCESS! Cloud database script ran smoothly. Evaluated and repaired coordinates for ${fixCount} listings inside Atlas!`);
+        res.send(`✨ SUCCESS! Cloud database script ran smoothly. Repaired coordinates for ${fixCount} listings in Atlas!`);
     } catch (err) {
         res.send("❌ Critical route execution failure: " + err.message);
     }
 });
 
 // ==========================================================================
-// 🛡️ ZERO-ROUTER FALLBACK CATCH (Express 5 Safe)
+// 🛡️ ZERO-ROUTER FALLBACK CATCH (Express 5 Certified)
 // ==========================================================================
 app.use((req, res) => {
     res.status(404).render("error.ejs", { message: "Page Not Found!" });
 });
 
+// Main Core Operational Exception Response Handler Framework Pipeline
 app.use((err, req, res, next) => {
     let { statusCode = 500, message = "Something went wrong!" } = err;
     if (!res.headersSent) {
@@ -173,4 +150,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`📡 Full version-synchronized stack live on port ${PORT}`));
+app.listen(PORT, () => console.log(`📡 Clean operational framework active on port ${PORT}`));
