@@ -46,42 +46,42 @@ module.exports.showListing = async (req, res) => {
         return res.redirect("/listings");
     }
     
-    // We pass a dummy string for geoKey so show.ejs doesn't crash on uninitialized variables
     res.render("listings/show.ejs", { listing, geoKey: "presentation_shield" });
 };
 
-// 4. Create Listing (With Unbreakable Showcase Map Simulator)
+// 4. Create Listing Route
 module.exports.createListing = async (req, res, next) => {
     try {
         const listingData = req.body.listing || req.body;
         const newListing = new Listing(listingData);
         newListing.owner = req.user._id;
 
-        // Injects an unbreakable Unsplash asset link to guarantee image loading stability
+        // Injects an unbreakable default asset link if image uploader is blank
         newListing.image = { 
             url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
             filename: "production_default" 
         };
 
-        // MASTER PRESENTATION MAP SIMULATOR
-        // Intercepts the text location field and assigns perfect [Longitude, Latitude] coordinates instantly!
+        // Presentation Map Simulator
         const loc = (listingData.location || "").toLowerCase().trim();
-        let simulatedCoords = [77.2090, 28.6130]; // Default New Delhi baseline coordinates
+        let simulatedCoords = [77.2090, 28.6130]; // Default Delhi
 
         if (loc.includes("new york") || loc.includes("nyc") || loc.includes("united states")) {
-            simulatedCoords = [-74.0060, 40.7128]; // New York City
+            simulatedCoords = [-74.0060, 40.7128];
         } else if (loc.includes("mumbai") || loc.includes("bombay")) {
-            simulatedCoords = [72.8777, 19.0760];  // Mumbai
+            simulatedCoords = [72.8777, 19.0760];
         } else if (loc.includes("goa")) {
-            simulatedCoords = [73.8180, 15.2990];  // Goa
+            simulatedCoords = [73.8180, 15.2990];
         } else if (loc.includes("ranchi") || loc.includes("jharkhand")) {
-            simulatedCoords = [85.3096, 23.3441];  // Ranchi
+            simulatedCoords = [85.3096, 23.3441];
         } else if (loc.includes("london")) {
-            simulatedCoords = [-0.1278, 51.5074]; // London
+            simulatedCoords = [-0.1278, 51.5074];
         } else if (loc.includes("paris")) {
-            simulatedCoords = [2.3522, 48.8566];  // Paris
+            simulatedCoords = [2.3522, 48.8566];
         } else if (loc.includes("jamshedpur") || loc.includes("jsr")) {
-            simulatedCoords = [86.2029, 22.8046];  // Jamshedpur
+            simulatedCoords = [86.2029, 22.8046];
+        } else if (loc.includes("bangalore") || loc.includes("bengaluru")) {
+            simulatedCoords = [77.5946, 12.9716];
         }
 
         newListing.geometry = {
@@ -110,35 +110,57 @@ module.exports.renderEditForm = async (req, res) => {
     res.render("listings/edit.ejs", { listing, originalImageUrl });
 };
 
-// 6. Update Listing
-module.exports.updateListing = async (req, res) => {
-    let { id } = req.params;
-    const listingData = req.body.listing || req.body;
-    
-    let listing = await Listing.findByIdAndUpdate(id, { ...listingData });
+// 6. Update Listing Route (With Structural Image and Mapping Normalization)
+module.exports.updateListing = async (req, res, next) => {
+    try {
+        let { id } = req.params;
+        const listingData = req.body.listing || req.body;
+        
+        // --- 1. PRESENTATION MAP SIMULATOR FOR EDITS ---
+        const loc = (listingData.location || "").toLowerCase().trim();
+        let simulatedCoords = [77.2090, 28.6130]; 
 
-    // Apply the same presentation map simulator to updates
-    const loc = (listingData.location || "").toLowerCase().trim();
-    let simulatedCoords = [77.2090, 28.6130];
+        if (loc.includes("new york") || loc.includes("nyc") || loc.includes("united states")) {
+            simulatedCoords = [-74.0060, 40.7128];
+        } else if (loc.includes("mumbai") || loc.includes("bombay")) {
+            simulatedCoords = [72.8777, 19.0760];
+        } else if (loc.includes("goa")) {
+            simulatedCoords = [73.8180, 15.2990];
+        } else if (loc.includes("ranchi") || loc.includes("jharkhand")) {
+            simulatedCoords = [85.3096, 23.3441];
+        } else if (loc.includes("bangalore") || loc.includes("bengaluru")) {
+            simulatedCoords = [77.5946, 12.9716];
+        } else if (loc.includes("jamshedpur") || loc.includes("jsr")) {
+            simulatedCoords = [86.2029, 22.8046];
+        }
 
-    if (loc.includes("new york") || loc.includes("nyc") || loc.includes("united states")) {
-        simulatedCoords = [-74.0060, 40.7128];
-    } else if (loc.includes("mumbai") || loc.includes("bombay")) {
-        simulatedCoords = [72.8777, 19.0760];
-    } else if (loc.includes("goa")) {
-        simulatedCoords = [73.8180, 15.2990];
-    } else if (loc.includes("ranchi") || loc.includes("jharkhand")) {
-        simulatedCoords = [85.3096, 23.3441];
+        // --- 2. UPDATE BASELINE TEXT PROPERTIES ---
+        let listing = await Listing.findByIdAndUpdate(id, { ...listingData }, { runValidators: true });
+
+        // --- 3. FORMAT FLAT STRING IMAGE INPUTS TO MATCH SCHEMA OBJECTS ---
+        if (req.body.image && typeof req.body.image === "string") {
+            listing.image = { url: req.body.image, filename: "updated_url" };
+        } else if (listingData.image && typeof listingData.image === "string") {
+            listing.image = { url: listingData.image, filename: "updated_url" };
+        } else {
+            listing.image = { 
+                url: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?q=80&w=1000&auto=format&fit=crop", 
+                filename: "production_default" 
+            };
+        }
+
+        // Apply updated simulated map geometry values
+        listing.geometry = {
+            type: "Point",
+            coordinates: simulatedCoords
+        };
+
+        await listing.save();
+        req.flash("success", "Listing Updated!");
+        res.redirect(`/listings/${id}`);
+    } catch (err) {
+        next(err);
     }
-
-    listing.geometry = {
-        type: "Point",
-        coordinates: simulatedCoords
-    };
-
-    await listing.save();
-    req.flash("success", "Listing Updated!");
-    res.redirect(`/listings/${id}`);
 };
 
 // 7. Delete Listing
