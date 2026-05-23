@@ -63,14 +63,22 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+// --- GLOBAL FAIL-SAFE MIDDLEWARE FOR CLOUD & MAP KEYS ---
 app.use((req, res, next) => {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
     res.locals.currUser = req.user;
+    
+    // Injects variables universally to eliminate "api_key required" or undefined template errors
+    res.locals.geoKey = process.env.GEO_API_KEY;
+    res.locals.cloudinaryName = process.env.CLOUD_NAME;
+    res.locals.cloudinaryKey = process.env.CLOUD_API_KEY;
+    res.locals.cloudinarySecret = process.env.CLOUD_API_SECRET || process.env.CLOUD_SECRET;
+    
     next();
 });
 
-// --- ROUTES PIPELINE ORDER FIXED ---
+// --- ROUTES PIPELINE ORDER ---
 
 // 1. Explicitly trap the landing root redirect first
 app.get("/", (req, res) => {
