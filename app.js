@@ -9,7 +9,7 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
-const { MongoStore } = require("connect-mongo"); // Fixed Destructuring for v6
+const { MongoStore } = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -17,7 +17,7 @@ const axios = require("axios");
 
 const dbUrl = process.env.ATLASDB_URL || "mongodb://127.0.0.1:27017/Wanderlust";
 
-// Connect to MongoDB Atlas Cluster
+// Connect to MongoDB Atlas
 async function main() {
     await mongoose.connect(dbUrl);
 }
@@ -34,7 +34,7 @@ app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ==========================================================================
-// 🛡️ EXPRESS 5 CERTIFIED SESSIONS LAYOUT
+// 🛡️ EXPRESS 5 / CONNECT-MONGO V6 SESSIONS CONFIGURATION
 // ==========================================================================
 const sessionOptions = {
     store: MongoStore.create({
@@ -56,21 +56,18 @@ app.use(session(sessionOptions));
 app.use(flash());
 
 // ==========================================================================
-// 🛡️ CLEAN MODEL IMPORTATION HOOKS
+// 🛡️ MODEL CORES & PASSPORT REFERENCE BINDINGS
 // ==========================================================================
 const User = require("./models/user.js");
 const Listing = require("./models/listing.js");
 
-// Passport Middleware Matrix Setup - RECTIFIED REFERENCE FUNCTIONS
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
 
-// Passed by reference directly, NOT called as functions!
 passport.serializeUser(User.serializeUser);
 passport.deserializeUser(User.deserializeUser);
 
-// Global System Local Injection Variables Middleware
 app.use((req, res, next) => {
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
@@ -79,7 +76,7 @@ app.use((req, res, next) => {
 });
 
 // ==========================================================================
-// 🚀 ALL STRATEGIC CHANNELS RESTORED UNCONDITIONALLY
+// 🚀 ALL CORE ROUTERS
 // ==========================================================================
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
@@ -92,59 +89,66 @@ app.use("/", userRouter);
 app.get("/", (req, res) => res.redirect("/listings"));
 
 // ==========================================================================
-// 🗺️ EMERGENCY REPAIR ENDPOINT FOR MAP COMPLIANCE (Bypasses Rate Limits)
+// 🗺️ CLOUD-BASED OVERRIDE MAP REPAIR (Wipes out lingering Delhi/Placeholder errors)
 // ==========================================================================
 app.get("/run-global-map-repair", async (req, res) => {
     try {
         const listings = await Listing.find({});
-        // Added safety token verification fallback string bypass
-        const apiKey = process.env.GEO_API_KEY || "YOUR_POSITIONSTACK_API_KEY"; 
+        const apiKey = process.env.GEO_API_KEY || "60e94bb5e1358ef9c7b45ea1b65e90df"; 
 
-        if (!apiKey || apiKey === "YOUR_POSITIONSTACK_API_KEY") {
-            return res.send("❌ Error: GEO_API_KEY is missing from Render environment variables!");
+        if (!apiKey) {
+            return res.send("❌ Error: GEO_API_KEY tokens missing.");
         }
 
         let fixCount = 0;
         for (let listing of listings) {
             try {
-                if (listing.geometry && listing.geometry.coordinates && listing.geometry.coordinates.length === 2 && listing.geometry.coordinates[0] !== 0) {
-                    continue; 
-                }
-                const query = `${listing.location}, ${listing.country}`;
-                const url = `http://api.positionstack.com/v1/forward?access_key=${apiKey}&query=${encodeURIComponent(query)}&limit=1`;
+                const coordinates = listing.geometry?.coordinates || [0, 0];
+                const hasPlaceholderCoords = coordinates[0] === 0 && coordinates[1] === 0;
                 
-                const apiResponse = await axios.get(url, { timeout: 5000 });
-                if (apiResponse.data && apiResponse.data.data && apiResponse.data.data[0]) {
-                    const geo = apiResponse.data.data[0];
-                    await Listing.findByIdAndUpdate(listing._id, {
-                        $set: {
-                            "geometry": {
-                                type: "Point",
-                                coordinates: [geo.longitude, geo.latitude] 
+                // Pure filter targeting coordinates locking specifically to the fallback Delhi cluster
+                const isPlaceholderDelhi = (coordinates[0] >= 77.0 && coordinates[0] <= 77.3) && (coordinates[1] >= 28.5 && coordinates[1] <= 28.7);
+                
+                if (hasPlaceholderCoords || isPlaceholderDelhi) {
+                    
+                    // Skip legitimate, real Delhi properties
+                    if (listing.title && listing.title.toLowerCase().includes("delhi")) {
+                        continue;
+                    }
+
+                    const query = `${listing.location}, ${listing.country}`;
+                    const url = `http://api.positionstack.com/v1/forward?access_key=${apiKey}&query=${encodeURIComponent(query)}&limit=1`;
+                    
+                    const apiResponse = await axios.get(url, { timeout: 5000 });
+                    if (apiResponse.data && apiResponse.data.data && apiResponse.data.data[0]) {
+                        const geo = apiResponse.data.data[0];
+                        await Listing.findByIdAndUpdate(listing._id, {
+                            $set: {
+                                "geometry": {
+                                    type: "Point",
+                                    coordinates: [geo.longitude, geo.latitude] 
+                                }
                             }
-                        }
-                    });
-                    fixCount++;
+                        });
+                        fixCount++;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Safer request throttling delay
                 }
-                await new Promise(resolve => setTimeout(resolve, 600)); // Safer timeout interval block
             } catch (inner) {
-                console.log(`Skipping ${listing.location}: ${inner.message}`);
+                console.log(`Skipping listing: ${inner.message}`);
             }
         }
-        res.send(`✨ SUCCESS! Cloud database script ran smoothly. Repaired coordinates for ${fixCount} listings in Atlas!`);
+        res.send(`✨ SUCCESS! Cloud system executed seamlessly. Overwrote and hard-fixed ${fixCount} placeholder listings inside Atlas cluster!`);
     } catch (err) {
-        res.send("❌ Critical route execution failure: " + err.message);
+        res.send("❌ Route crashed: " + err.message);
     }
 });
 
-// ==========================================================================
-// 🛡️ ZERO-ROUTER FALLBACK CATCH (Express 5 Certified)
-// ==========================================================================
+// Fallback error-handling middleware stack
 app.use((req, res) => {
     res.status(404).render("error.ejs", { message: "Page Not Found!" });
 });
 
-// Main Core Operational Exception Response Handler Framework Pipeline
 app.use((err, req, res, next) => {
     let { statusCode = 500, message = "Something went wrong!" } = err;
     if (!res.headersSent) {
@@ -153,4 +157,4 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`📡 Clean operational framework active on port ${PORT}`));
+app.listen(PORT, () => console.log(`📡 Production cluster active on port ${PORT}`));
