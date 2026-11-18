@@ -156,5 +156,12 @@ app.use((err, req, res, next) => {
     }
 });
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`📡 Production cluster active on port ${PORT}`));
+
+if (require.main === module) {
+  const port = process.env.PORT || 8080;
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
+}
+
+module.exports = app;

@@ -1,0 +1,50 @@
+name: Wanderlust CI/CD Pipeline
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-verify:
+    name: CI - Install & Run Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies cleanly
+        run: npm ci
+
+      - name: Run Jest & Supertest suite
+        run: npm test
+        env:
+          NODE_ENV: test
+          ATLASDB_URL: ${{ secrets.ATLASDB_URL }}
+          SECRET: ${{ secrets.SECRET }}
+          MAP_TOKEN: ${{ secrets.MAP_TOKEN }}
+          CLOUD_NAME: ${{ secrets.CLOUD_NAME }}
+          CLOUD_API_KEY: ${{ secrets.CLOUD_API_KEY }}
+          CLOUD_API_SECRET: ${{ secrets.CLOUD_API_SECRET }}
+
+  deploy-to-render:
+    name: CD - Trigger Render Production Deploy
+    needs: test-and-verify
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
